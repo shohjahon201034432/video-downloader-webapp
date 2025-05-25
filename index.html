@@ -1,22 +1,100 @@
 <!DOCTYPE html>
 <html lang="uz">
-
 <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Video Yuklab Olish</title>
-    <link rel="stylesheet" href="style.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Video Yuklovchi WebApp</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 500px;
+            margin: 30px auto;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 10px;
+            box-shadow: 0 0 10px #ccc;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            margin-bottom: 15px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            font-size: 18px;
+            background-color: #007bff;
+            border: none;
+            color: white;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #status {
+            margin-top: 20px;
+            font-weight: bold;
+        }
+    </style>
 </head>
-
 <body>
-    <div class="container">
-        <h1>📥 Video Yuklab Olish</h1>
-        <input type="text" id="videoLink" placeholder="Video linkni kiriting (YouTube, TikTok...)" />
-        <button onclick="downloadVideo()">🎬 Yuklash</button>
-        <p id="status"></p>
-    </div>
 
-    <script src="script.js"></script>
+<h2>Video yuklash uchun havolani kiriting</h2>
+
+<input type="text" id="videoLink" placeholder="Masalan: https://youtube.com/..." />
+<button onclick="downloadVideo()">Yuklash</button>
+
+<p id="status"></p>
+
+<script>
+    function downloadVideo() {
+        const url = document.getElementById("videoLink").value.trim();
+        const status = document.getElementById("status");
+
+        if (!url) {
+            status.innerText = "❗ Iltimos, video havolasini kiriting.";
+            return;
+        }
+
+        // Telegram WebApp API tayyor bo'lishi
+        if (typeof Telegram === "undefined" || !Telegram.WebApp) {
+            status.innerText = "❌ Telegram WebApp orqali oching.";
+            return;
+        }
+
+        Telegram.WebApp.ready();
+
+        const user = Telegram.WebApp.initDataUnsafe?.user;
+        const user_id = user?.id;
+
+        if (!user_id) {
+            status.innerText = "❌ Telegram orqali ochilganligiga ishonch hosil qiling.";
+            return;
+        }
+
+        status.innerText = "⏳ Yuklanmoqda...";
+
+        fetch("https://your-backend-url.com/download", {  // <--- Backend URLni shu yerga yozing
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ url, user_id })
+        })
+            .then((res) => res.json())
+            .then((data) => {
+                status.innerText = data.message || "✅ Video tayyor!";
+            })
+            .catch((err) => {
+                console.error(err);
+                status.innerText = "❌ Xatolik yuz berdi.";
+            });
+    }
+</script>
+
 </body>
-
 </html>
