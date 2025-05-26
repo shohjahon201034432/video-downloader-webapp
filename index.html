@@ -1,100 +1,106 @@
 <!DOCTYPE html>
-<html lang="uz">
+<html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Video Yuklovchi WebApp</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 500px;
-            margin: 30px auto;
-            padding: 20px;
-            background: #f9f9f9;
-            border-radius: 10px;
-            box-shadow: 0 0 10px #ccc;
-        }
-        input[type="text"] {
-            width: 100%;
-            padding: 10px;
-            font-size: 16px;
-            margin-bottom: 15px;
-            border-radius: 5px;
-            border: 1px solid #ccc;
-        }
-        button {
-            width: 100%;
-            padding: 12px;
-            font-size: 18px;
-            background-color: #007bff;
-            border: none;
-            color: white;
-            border-radius: 6px;
-            cursor: pointer;
-        }
-        button:hover {
-            background-color: #0056b3;
-        }
-        #status {
-            margin-top: 20px;
-            font-weight: bold;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Video Downloader</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f3f3f3;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 30px;
+    }
+
+    h1 {
+      color: #333;
+    }
+
+    input[type="text"] {
+      width: 90%;
+      max-width: 400px;
+      padding: 12px;
+      margin: 20px 0;
+      font-size: 16px;
+      border: 2px solid #ccc;
+      border-radius: 8px;
+    }
+
+    button {
+      background-color: #0088cc;
+      color: white;
+      padding: 12px 24px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    button:hover {
+      background-color: #007ab8;
+    }
+
+    .message {
+      margin-top: 20px;
+      font-size: 16px;
+      color: green;
+    }
+
+    .error {
+      color: red;
+    }
+  </style>
 </head>
 <body>
+  <h1>🎬 Video Downloader</h1>
+  <input type="text" id="videoUrl" placeholder="Video havolasini kiriting" />
+  <button onclick="downloadVideo()">📥 Yuklab olish</button>
+  <div class="message" id="messageBox"></div>
 
-<h2>Video yuklash uchun havolani kiriting</h2>
+  <script>
+    async function downloadVideo() {
+      const url = document.getElementById('videoUrl').value.trim();
+      const messageBox = document.getElementById('messageBox');
 
-<input type="text" id="videoLink" placeholder="Masalan: https://youtube.com/..." />
-<button onclick="downloadVideo()">Yuklash</button>
+      if (!window.Telegram.WebApp.initDataUnsafe.user) {
+        messageBox.innerHTML = "❌ Telegram WebApp orqali oching.";
+        messageBox.classList.add("error");
+        return;
+      }
 
-<p id="status"></p>
+      if (!url) {
+        messageBox.innerHTML = "❗ Video havolasini kiriting.";
+        messageBox.classList.add("error");
+        return;
+      }
 
-<script>
-    function downloadVideo() {
-        const url = document.getElementById("videoLink").value.trim();
-        const status = document.getElementById("status");
+      messageBox.innerHTML = "⏳ Yuklanmoqda...";
+      messageBox.classList.remove("error");
 
-        if (!url) {
-            status.innerText = "❗ Iltimos, video havolasini kiriting.";
-            return;
-        }
+      const user_id = window.Telegram.WebApp.initDataUnsafe.user.id;
 
-        // Telegram WebApp API tayyor bo'lishi
-        if (typeof Telegram === "undefined" || !Telegram.WebApp) {
-            status.innerText = "❌ Telegram WebApp orqali oching.";
-            return;
-        }
+      try {
+        const response = await fetch('http://127.0.0.1:8000/download', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ url, user_id })
+        });
 
-        Telegram.WebApp.ready();
+        const result = await response.json();
+        messageBox.innerHTML = result.message;
+        messageBox.classList.remove("error");
 
-        const user = Telegram.WebApp.initDataUnsafe?.user;
-        const user_id = user?.id;
-
-        if (!user_id) {
-            status.innerText = "❌ Telegram orqali ochilganligiga ishonch hosil qiling.";
-            return;
-        }
-
-        status.innerText = "⏳ Yuklanmoqda...";
-
-        fetch("https://your-backend-url.com/download", {  // <--- Backend URLni shu yerga yozing
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({ url, user_id })
-        })
-            .then((res) => res.json())
-            .then((data) => {
-                status.innerText = data.message || "✅ Video tayyor!";
-            })
-            .catch((err) => {
-                console.error(err);
-                status.innerText = "❌ Xatolik yuz berdi.";
-            });
+      } catch (error) {
+        messageBox.innerHTML = "❌ Xatolik yuz berdi: " + error.message;
+        messageBox.classList.add("error");
+      }
     }
-</script>
 
+    Telegram.WebApp.ready(); // WebAppni tayyorlash
+  </script>
 </body>
 </html>
